@@ -92,11 +92,22 @@ class MixtureOfExperts(nn.Module):
         weights, selected_experts = torch.topk(F.softmax(router_logits, dim=1, dtype=torch.float), self.num_experts_per_tok, dim=-1)
         weights /= weights.sum(dim=-1, keepdim=True)
         final_output = torch.zeros_like(x_flat)
+        
+        # Buat 'one hot' encoding untuk expert yang dipilih
         expert_mask = F.one_hot(selected_experts, num_classes=len(self.experts)).permute(2, 0, 1)
+        
         for i, expert in enumerate(self.experts):
-            token_indices, _ = torch.where(expert_mask[i])
+            # ✨ FIX: Dapatkan indeks token DAN indeks top-k nya
+            token_indices, top_k_indices = torch.where(expert_mask[i])
+            
             if token_indices.numel() > 0:
-                final_output.index_add_(0, token_indices, (expert(x_flat[token_indices]) * weights[expert_mask[i]].sum(1, keepdim=True)).to(x.dtype))
+                # ✨ FIX: Pilih bobot yang benar dan sesuaikan bentuknya untuk perkalian
+                correct_weights = weights[token_indices, top_k_indices].unsqueeze(1)
+                expert_output = expert(x_flat[token_indices])
+                
+                weighted_output = (expert_output * correct_weights).to(x.dtype)
+                final_output.index_add_(0, token_indices, weighted_output)
+
         return final_output.view(B, T, C)
 
 class Block(nn.Module):
