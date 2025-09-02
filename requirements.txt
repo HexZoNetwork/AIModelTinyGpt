@@ -1,0 +1,13 @@
+torch>=1.13
+transformers
+tokenizers
+tqdm
+numpy
+flask
+flask-cors
+tensorboard
+torchvision
+pandas
+Pillow
+Wikipedia-API
+bing-image-downloader
