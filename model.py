@@ -53,7 +53,6 @@ class SlidingWindowAttention(nn.Module):
         self.rotary_emb = RotaryEmbedding(self.head_dim, max_seq_len)
         self.resid_dropout = nn.Dropout(dropout)
         self.sliding_window_size = sliding_window_size
-        self.mask = None
         if sliding_window_size is not None:
             mask = torch.full((1, 1, max_seq_len, max_seq_len), float("-inf"))
             mask = torch.triu(mask, diagonal=1)
